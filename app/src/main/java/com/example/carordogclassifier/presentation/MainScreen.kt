@@ -1,6 +1,7 @@
 package com.example.carordogclassifier.presentation
 
 import androidx.compose.runtime.Composable
+import com.example.carordogclassifier.presentation.camera_screen.CameraScreen
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.PermissionState
 import com.google.accompanist.permissions.isGranted

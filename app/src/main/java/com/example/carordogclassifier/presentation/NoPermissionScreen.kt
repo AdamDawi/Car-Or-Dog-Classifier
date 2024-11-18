@@ -14,6 +14,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 
@@ -21,7 +22,6 @@ import androidx.compose.ui.unit.dp
 fun NoPermissionScreen(
     onRequestPermission: () -> Unit
 ) {
-
     NoPermissionContent(
         onRequestPermission = onRequestPermission
     )
@@ -38,10 +38,16 @@ private fun NoPermissionContent(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Text(text = "Please grant the permission to use the camera to use the core functionality of this app.")
-        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            text = "Please grant the permission to use the camera to use the core functionality of this app.",
+            textAlign = TextAlign.Center
+        )
+        Spacer(modifier = Modifier.height(64.dp))
         Button(onClick = onRequestPermission) {
-            Icon(imageVector = Icons.Default.Done, contentDescription = "Camera")
+            Icon(
+                imageVector = Icons.Default.Done,
+                contentDescription = Icons.Default.Done.name
+            )
             Text(text = "Grant permission")
         }
     }

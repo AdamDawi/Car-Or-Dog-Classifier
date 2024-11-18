@@ -3,7 +3,6 @@ package com.example.carordogclassifier.model
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Color
-import com.example.carordogclassifier.ml.CnnModelOptimized
 import org.tensorflow.lite.DataType
 import org.tensorflow.lite.Interpreter
 import org.tensorflow.lite.support.common.FileUtil
@@ -17,50 +16,51 @@ class PredictionModel(
     private val interpreter: Interpreter
 
     init {
-        // Initialize the optimized model instance
         interpreter = createInterpreter()
     }
 
-    // Predicts output based on the input Bitmap
     fun predict(originalBitmap: Bitmap): FloatArray {
-        // Skalowanie bitmapy do rozmiaru [64, 64], jak oczekuje model
-        val scaledBitmap: Bitmap = Bitmap.createScaledBitmap(originalBitmap, 64, 64, true)
+        // Scale bitmap to size [128, 128]
+        val scaledBitmap: Bitmap = Bitmap.createScaledBitmap(originalBitmap, BITMAP_SIZE, BITMAP_SIZE, true)
 
-        // Tworzenie ByteBuffer do załadowania bitmapy
-        val byteBuffer = ByteBuffer.allocateDirect(4 * 64 * 64 * 3) // 64x64 obraz RGB
-        byteBuffer.order(ByteOrder.nativeOrder())
+        val byteBuffer = convertBitmapToByteBuffer(scaledBitmap)
 
-        // Konwersja pikseli bitmapy na ByteBuffer (normalizacja do [0, 1])
-        for (y in 0 until 64) {
-            for (x in 0 until 64) {
-                val pixel = scaledBitmap.getPixel(x, y)
-                byteBuffer.putFloat(Color.red(pixel) / 255.0f)  // Czerwony kanał
-                byteBuffer.putFloat(Color.green(pixel) / 255.0f)  // Zielony kanał
-                byteBuffer.putFloat(Color.blue(pixel) / 255.0f)  // Niebieski kanał
-            }
-        }
+        // Make TensorBuffer with size [1, 128, 128, 3]
+        val input = TensorBuffer.createFixedSize(intArrayOf(1, BITMAP_SIZE, BITMAP_SIZE, 3), DataType.FLOAT32)
+        input.loadBuffer(byteBuffer)
 
-        // Tworzenie TensorBuffer o odpowiednim kształcie [1, 64, 64, 3]
-        val inputFeature0 = TensorBuffer.createFixedSize(intArrayOf(1, 64, 64, 3), DataType.FLOAT32)
-        inputFeature0.loadBuffer(byteBuffer)
-
-        // Przygotowanie tablicy na wynik (output)
         val outputArr = Array(1) { FloatArray(1) }
 
-        // Uruchomienie modelu (wykonanie predykcji)
-        interpreter.run(inputFeature0.buffer, outputArr)
+        // Predict
+        interpreter.run(input.buffer, outputArr)
 
-        // Zwrócenie wyniku predykcji jako FloatArray
         return outputArr[0]
+    }
+
+    private fun convertBitmapToByteBuffer(bitmap: Bitmap): ByteBuffer {
+        val byteBuffer = ByteBuffer.allocateDirect(4 * BITMAP_SIZE * BITMAP_SIZE * 3) // 128x128 RGB image
+        byteBuffer.order(ByteOrder.nativeOrder())
+
+        // normalize to [0, 1]
+        for (y in 0 until BITMAP_SIZE) {
+            for (x in 0 until BITMAP_SIZE) {
+                val pixel = bitmap.getPixel(x, y)
+                byteBuffer.putFloat(Color.red(pixel) / 255.0f)  // Red
+                byteBuffer.putFloat(Color.green(pixel) / 255.0f)  // Green
+                byteBuffer.putFloat(Color.blue(pixel) / 255.0f)  // Blue
+            }
+        }
+        return byteBuffer
     }
 
 
     private fun createInterpreter(): Interpreter {
-        val tfLiteOptions = Interpreter.Options()//can be configure to use GPUDelegate
+        val tfLiteOptions = Interpreter.Options() //can be configure to use GPUDelegate
         return Interpreter(FileUtil.loadMappedFile(context, MODEL_FILENAME), tfLiteOptions)
     }
 
     companion object {
+        const val BITMAP_SIZE = 128
         const val MODEL_FILENAME = "model.tflite"
     }
 }
